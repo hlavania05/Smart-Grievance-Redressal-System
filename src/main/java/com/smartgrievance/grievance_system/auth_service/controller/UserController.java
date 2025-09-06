@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.smartgrievance.grievance_system.auth_service.dtos.RequestDtos.CreateUserRequestDTO;
 import com.smartgrievance.grievance_system.auth_service.service.UserService;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -40,4 +42,14 @@ public class UserController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    @DeleteMapping("/user/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id){
+        try{
+            return userService.deleteUser(id);
+        }
+        catch(Exception e){
+            return new ResponseEntity<>("Error", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

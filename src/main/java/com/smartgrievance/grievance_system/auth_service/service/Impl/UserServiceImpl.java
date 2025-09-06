@@ -79,4 +79,16 @@ public class UserServiceImpl implements UserService {
 
         return new ResponseEntity<>("User Created!!", HttpStatus.CREATED);
     }
+
+    public ResponseEntity<?> deleteUser(Long id){
+        User user = userRepository.findByUserId(id).orElse(null);
+        if(user == null){
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("StatusCode : ", HttpStatus.BAD_REQUEST.value());
+            errorResponse.put("Message : ", "User does not Existed!!");
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+        userRepository.deleteById(id);
+        return new ResponseEntity<>("User Deleted!!", HttpStatus.OK);
+    }
 }

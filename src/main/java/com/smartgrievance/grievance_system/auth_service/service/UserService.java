@@ -7,4 +7,5 @@ import com.smartgrievance.grievance_system.auth_service.dtos.RequestDtos.CreateU
 public interface UserService {
     ResponseEntity<?> getAllUsers();
     ResponseEntity<?> createUser(CreateUserRequestDTO createUserRequest);
+    ResponseEntity<?> deleteUser(Long id);
 }
