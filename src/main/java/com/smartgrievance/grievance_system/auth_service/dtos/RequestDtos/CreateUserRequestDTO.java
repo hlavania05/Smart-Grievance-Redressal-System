@@ -9,5 +9,4 @@ public class CreateUserRequestDTO {
     private String phoneNo;
     private String address;
     private String password;
-    private String roleName;
 }

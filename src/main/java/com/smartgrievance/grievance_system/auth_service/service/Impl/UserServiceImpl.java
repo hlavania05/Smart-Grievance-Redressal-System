@@ -56,18 +56,8 @@ public class UserServiceImpl implements UserService {
             return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
         }
 
-        String roleName = createUserRequestDTO.getRoleName();
-        if (roleName == null) {
-            throw new IllegalArgumentException("Role name is required!");
-        }
+        String roleName = "CITIZEN";
         Role role = roleRepository.findByRoleName(roleName.toUpperCase()).orElse(null);
-
-        if (role == null) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("StatusCode : ", HttpStatus.BAD_REQUEST.value());
-            errorResponse.put("Message : ", "Role Not Found");
-            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-        }
 
         User newUser = new User();
         newUser.setFullName(createUserRequestDTO.getName());
@@ -76,6 +66,7 @@ public class UserServiceImpl implements UserService {
         newUser.setPhoneNumber(createUserRequestDTO.getPhoneNo());
         newUser.setAddress(createUserRequestDTO.getAddress());
         newUser.setRole(role);
+        userRepository.save(newUser);
 
         return new ResponseEntity<>("User Created!!", HttpStatus.CREATED);
     }

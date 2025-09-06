@@ -3,6 +3,7 @@ package com.smartgrievance.grievance_system.auth_service.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,6 +26,7 @@ public class UserController {
     private UserService userService;
 
     @GetMapping("/allUsers")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllUsers(){
         try{
             return userService.getAllUsers();
@@ -34,6 +36,7 @@ public class UserController {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createUser(@RequestBody CreateUserRequestDTO createUserRequest){
         try{
             return userService.createUser(createUserRequest);
@@ -43,6 +46,7 @@ public class UserController {
         }
     }
     @DeleteMapping("/user/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteUser(@PathVariable Long id){
         try{
             return userService.deleteUser(id);
@@ -51,5 +55,6 @@ public class UserController {
             return new ResponseEntity<>("Error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    // make user -> admin
 
 }

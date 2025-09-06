@@ -45,7 +45,7 @@ public class AuthController {
             return authService.loginUser(loginRequest);
         }
         catch(Exception e){
-            return new ResponseEntity<>("Internal Server Error!!", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
