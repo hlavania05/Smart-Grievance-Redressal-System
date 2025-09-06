@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api/admin")
 public class ComplaintController {
 
-    @GetMapping("/allComplaints")
+    @GetMapping("/allcomplaints")
     public ResponseEntity<?> getAllComplaints(){
         return new ResponseEntity<>("Hello this is admin portal", HttpStatus.OK);
     }
