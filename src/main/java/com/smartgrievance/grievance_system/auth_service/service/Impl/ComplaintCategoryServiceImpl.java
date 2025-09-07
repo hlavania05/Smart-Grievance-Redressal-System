@@ -10,8 +10,9 @@ import com.smartgrievance.grievance_system.auth_service.entity.ComplaintCategory
 import com.smartgrievance.grievance_system.auth_service.repository.ComplaintCategoryRepository;
 import com.smartgrievance.grievance_system.auth_service.service.ComplaintCategoryService;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @Service
 public class ComplaintCategoryServiceImpl implements ComplaintCategoryService {
@@ -22,11 +23,19 @@ public class ComplaintCategoryServiceImpl implements ComplaintCategoryService {
     @Override
     public ResponseEntity<?> getAllCategories() {
         List<ComplaintCategory> categories = categoryRepository.findAll();
+        if (categories.isEmpty()) {
+            Map<String, String> response = new HashMap<>();
+            response.put("Message: ", "No Categories are Available!!");
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
         return new ResponseEntity<>(categories, HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<?> addCategory(ComplaintCategoryRequestDTO dto) {
+        if (categoryRepository.findByCategoryName(dto.getCategoryName()).orElse(null) != null) {
+            return new ResponseEntity<>("Category already exists!", HttpStatus.CONFLICT);
+        }
         ComplaintCategory category = new ComplaintCategory();
         category.setCategoryName(dto.getCategoryName());
 
@@ -36,27 +45,34 @@ public class ComplaintCategoryServiceImpl implements ComplaintCategoryService {
 
     @Override
     public ResponseEntity<?> updateCategory(Long id, ComplaintCategoryRequestDTO dto) {
-        Optional<ComplaintCategory> optionalCategory = categoryRepository.findById(id);
-        if (optionalCategory.isEmpty()) {
-            return new ResponseEntity<>("Category not found!", HttpStatus.NOT_FOUND);
+        ComplaintCategory category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found!"));
+
+        if (categoryRepository.findByCategoryName(dto.getCategoryName()).orElse(null) != null
+                && !category.getCategoryName().equals(dto.getCategoryName())) {
+            return new ResponseEntity<>("Category name already exists!", HttpStatus.CONFLICT);
         }
 
-        ComplaintCategory category = optionalCategory.get();
         category.setCategoryName(dto.getCategoryName());
+        ComplaintCategory updatedCategory = categoryRepository.save(category);
 
-        categoryRepository.save(category);
-        return new ResponseEntity<>("Category updated successfully!", HttpStatus.OK);
+        return new ResponseEntity<>(updatedCategory, HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<?> deleteCategory(Long id) {
-        Optional<ComplaintCategory> optionalCategory = categoryRepository.findById(id);
-        if (optionalCategory.isEmpty()) {
+        if (!categoryRepository.existsById(id)) {
             return new ResponseEntity<>("Category not found!", HttpStatus.NOT_FOUND);
         }
 
-        categoryRepository.deleteById(id);
-        return new ResponseEntity<>("Category deleted successfully!", HttpStatus.OK);
+        try {
+            categoryRepository.deleteById(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Category deleted successfully!");
+            response.put("deletedId", String.valueOf(id));
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Unable to delete category. It may be in use.", HttpStatus.CONFLICT);
+        }
     }
 }
-

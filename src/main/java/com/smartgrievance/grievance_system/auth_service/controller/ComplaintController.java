@@ -33,7 +33,6 @@ public class ComplaintController {
         return complaintService.fileComplaint(dto, auth.getName());
     }
 
-    //Not working properly - Forbidden bta rhi h
     @GetMapping("/my")
     @PreAuthorize("hasRole('CITIZEN')")
     public ResponseEntity<?> getMyComplaints(Authentication auth) {

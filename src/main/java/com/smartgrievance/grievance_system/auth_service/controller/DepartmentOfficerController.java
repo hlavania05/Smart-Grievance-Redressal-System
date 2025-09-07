@@ -19,7 +19,6 @@ public class DepartmentOfficerController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createOfficer(@RequestBody DepartmentOfficerRequestDTO dto) {
         return officerService.createOfficer(dto);
-        // officer banane ke baad user detail me bhi roleId change krni h
     }
 
     @GetMapping
@@ -29,7 +28,7 @@ public class DepartmentOfficerController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN', 'OFFICER')")
     public ResponseEntity<?> getOfficerById(@PathVariable Long id) {
         return officerService.getOfficerById(id);
     }

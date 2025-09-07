@@ -2,6 +2,7 @@ package com.smartgrievance.grievance_system.auth_service.service.Impl;
 
 import com.smartgrievance.grievance_system.auth_service.dtos.RequestDtos.ComplaintRequestDTO;
 import com.smartgrievance.grievance_system.auth_service.dtos.RequestDtos.UpdateComplaintStatusRequestDTO;
+import com.smartgrievance.grievance_system.auth_service.dtos.ResponseDtos.ComplaintDTO;
 import com.smartgrievance.grievance_system.auth_service.entity.Complaint;
 import com.smartgrievance.grievance_system.auth_service.entity.ComplaintCategory;
 import com.smartgrievance.grievance_system.auth_service.entity.ComplaintStatus;
@@ -47,7 +48,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         ComplaintCategory category = categoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
-        ComplaintStatus defaultStatus = statusRepository.findByStatusName("PENDING")
+        ComplaintStatus defaultStatus = statusRepository.findByStatusName("NOT_ASSIGNED")
                 .orElseThrow(() -> new RuntimeException("Default status not found"));
 
         Complaint complaint = new Complaint();
@@ -70,22 +71,66 @@ public class ComplaintServiceImpl implements ComplaintService {
     public ResponseEntity<?> getMyComplaints(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
         List<Complaint> complaints = complaintRepository.findByUser(user);
-        return new ResponseEntity<>(complaints, HttpStatus.OK);
+
+        List<ComplaintDTO> complaintDTOs = complaints.stream()
+                .map(c -> new ComplaintDTO(
+                        c.getComplaintId(),
+                        c.getTitle(),
+                        c.getDescription(),
+                        c.getLocation(),
+                        c.getAttachmentUrl(),
+                        c.getCreatedAt(),
+                        c.getUpdatedAt(),
+                        c.getUser().getFullName(),
+                        c.getCategory().getCategoryName(),
+                        c.getStatus().getStatusName()))
+                .toList();
+
+        return new ResponseEntity<>(complaintDTOs, HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<?> getComplaintById(Long id) {
-        Optional<Complaint> complaint = complaintRepository.findById(id);
-        if (complaint.isEmpty()) {
+        Complaint complaint = complaintRepository.findById(id).orElse(null);
+
+        if (complaint == null) {
             return new ResponseEntity<>("Complaint not found!", HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<>(complaint.get(), HttpStatus.OK);
+
+        ComplaintDTO dto = new ComplaintDTO(
+                complaint.getComplaintId(),
+                complaint.getTitle(),
+                complaint.getDescription(),
+                complaint.getLocation(),
+                complaint.getAttachmentUrl(),
+                complaint.getCreatedAt(),
+                complaint.getUpdatedAt(),
+                complaint.getUser().getFullName(),
+                complaint.getCategory().getCategoryName(),
+                complaint.getStatus().getStatusName());
+
+        return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<?> getAllComplaints() {
-        return new ResponseEntity<>(complaintRepository.findAll(), HttpStatus.OK);
+        List<ComplaintDTO> complaints = complaintRepository.findAll().stream()
+                .map(c -> new ComplaintDTO(
+                        c.getComplaintId(),
+                        c.getTitle(),
+                        c.getDescription(),
+                        c.getLocation(),
+                        c.getAttachmentUrl(),
+                        c.getCreatedAt(),
+                        c.getUpdatedAt(),
+                        c.getUser().getFullName(),
+                        c.getCategory().getCategoryName(),
+                        c.getStatus().getStatusName()))
+                .toList();
+
+        return new ResponseEntity<>(complaints, HttpStatus.OK);
     }
 
     @Override
