@@ -11,17 +11,18 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class JwtUtil {
+    private final SecretKey key;
     private final long Expiration_time = 1000 * 60 * 60;
-    private static final String SECRET = "MySuperSecretKeyForJWTThatIsLongEnough123!";
+    // private static final String SECRET = "MySuperSecretKeyForJWTThatIsLongEnough123!";
 
-    private static final Key JWT_SECRET = new SecretKeySpec(
-            SECRET.getBytes(StandardCharsets.UTF_8),
-            SignatureAlgorithm.HS256.getJcaName());
-
+    public JwtUtil(@Value("${jwt.secret}") String secret) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String generateToken(String email, String roleName) {
         return Jwts.builder()
@@ -29,14 +30,14 @@ public class JwtUtil {
                 .claim("role", roleName)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + Expiration_time))
-                .signWith(JWT_SECRET)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     // Extract claims
     public Claims extractClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(JWT_SECRET)
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
