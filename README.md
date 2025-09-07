@@ -37,6 +37,8 @@ The system uses **JWT-based Authentication & Authorization** with role-based acc
 - **MySQL** — Relational Database  
 - **Lombok** — Reduce boilerplate code  
 
+![System Architecture](./assets/Grienvance_System_Architectiure.png)
+
 ---
 
 ## 🗄️ Database Design  
@@ -50,6 +52,8 @@ The system uses **JWT-based Authentication & Authorization** with role-based acc
 - **Department_Officer** → User with officer role, linked to department  
 - **Complaint_Assignment** → Links complaint with officer & assigned_by (Admin)  
 - **Complaint_History** → Tracks complaint status updates  
+
+![Database Design](./assets/Grievance_Database_Design.png)
 
 ---
 
