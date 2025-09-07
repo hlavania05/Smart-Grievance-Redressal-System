@@ -2,6 +2,7 @@ package com.smartgrievance.grievance_system.auth_service.service.Impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.smartgrievance.grievance_system.auth_service.dtos.RequestDtos.EmailOtpRequest;
 import com.smartgrievance.grievance_system.auth_service.dtos.RequestDtos.LoginRequestDTO;
 import com.smartgrievance.grievance_system.auth_service.dtos.RequestDtos.SignUpRequestDTO;
 import com.smartgrievance.grievance_system.auth_service.entity.Role;
@@ -17,6 +19,8 @@ import com.smartgrievance.grievance_system.auth_service.repository.RoleRepositor
 import com.smartgrievance.grievance_system.auth_service.repository.UserRepository;
 import com.smartgrievance.grievance_system.auth_service.security.JwtUtil;
 import com.smartgrievance.grievance_system.auth_service.service.AuthService;
+import com.smartgrievance.grievance_system.auth_service.service.EmailService;
+import com.smartgrievance.grievance_system.auth_service.service.RedisService;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -31,43 +35,41 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private JwtUtil jwtUtil;
-    
-    public ResponseEntity<?> registerUser(SignUpRequestDTO signUpRequest){
-        if(userRepository.findByEmail(signUpRequest.getEmail()).isPresent()){
+
+    @Autowired
+    private RedisService redisService;
+
+    @Autowired
+    private EmailService emailService;
+
+    public ResponseEntity<?> registerUser(SignUpRequestDTO signUpRequest) {
+        if (userRepository.findByEmail(signUpRequest.getEmail()).isPresent()) {
             Map<String, Object> response = new HashMap<>();
             response.put("StatusCode", HttpStatus.CONFLICT.value());
             response.put("Message : ", "Email is Already in use");
             return new ResponseEntity<>(response, HttpStatus.CONFLICT);
         }
 
-        Role CitizenRole = roleRepository.findByRoleName("CITIZEN").orElseThrow(() -> new RuntimeException("Default role not found"));
+        String otp = String.valueOf(new Random().nextInt(9999));
 
-        User user = new User();
-        user.setFullName(signUpRequest.getFullName());
-        user.setEmail(signUpRequest.getEmail());
-        user.setAddress(signUpRequest.getEmail());
-        user.setPassword(hashedPassword(signUpRequest.getPassword()));
-        user.setPhoneNumber(signUpRequest.getPhoneNumber());
-        user.setRole(CitizenRole);
+        redisService.saveUserWithOtp(signUpRequest.getEmail(), signUpRequest, otp);
 
-        userRepository.save(user);
+        emailService.sendVerificationEmail(signUpRequest.getEmail(), signUpRequest.getFullName(), otp);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("StatusCode : ", HttpStatus.CREATED.value());
-        response.put("Message : ", "User Successfully Create");
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-
+        response.put("StatusCode : ", HttpStatus.OK.value());
+        response.put("Message : ", "OTP sent to your email. Please verify.");
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    public ResponseEntity<?> loginUser(LoginRequestDTO loginRequest){
+    public ResponseEntity<?> loginUser(LoginRequestDTO loginRequest) {
         User user = userRepository.findByEmail(loginRequest.getEmail()).orElse(null);
-        if(user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())){
+        if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             Map<String, Object> response = new HashMap<>();
             response.put("StatusCode : ", HttpStatus.UNAUTHORIZED.value());
             response.put("Message : ", "Invalid Email or Password!");
             return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
         }
-        // Generate JWT token
         String roleName = user.getRole().getRoleName();
         String token = jwtUtil.generateToken(user.getEmail(), roleName);
 
@@ -79,7 +81,45 @@ public class AuthServiceImpl implements AuthService {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    public String hashedPassword(String password){
+    public String hashedPassword(String password) {
         return passwordEncoder.encode(password);
+    }
+
+    public ResponseEntity<?> ValidateEmailOTP(EmailOtpRequest emailOtpRequest) {
+        String email = emailOtpRequest.getEmail();
+        String otp = emailOtpRequest.getOtp();
+
+        String storedOtp = redisService.getOtp(email);
+
+        if(storedOtp == null || !storedOtp.equals(otp)){
+            Map<String, Object> response = new HashMap<>();
+            response.put("StatusCode : ", HttpStatus.BAD_REQUEST.value());
+            response.put("Message : ", "Invalid or expired OTP!!");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+        SignUpRequestDTO userDto = redisService.getUser(email);
+        if(userDto == null){
+            Map<String, Object> response = new HashMap<>();
+            response.put("StatusCode : ", HttpStatus.BAD_REQUEST.value());
+            response.put("Message : ", "UserDetails Expired!!");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+        Role defaultRole = roleRepository.findByRoleName("CITIZEN")
+                .orElseThrow(() -> new RuntimeException("Default role not found"));
+
+        User user = new User();
+        user.setFullName(userDto.getFullName());
+        user.setEmail(userDto.getEmail());
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        user.setPhoneNumber(userDto.getPhoneNumber());
+        user.setAddress(userDto.getAddress());
+        user.setRole(defaultRole);
+
+        userRepository.save(user);
+        redisService.delete(email);
+
+        return new ResponseEntity<>("OTP Verified, User Registered Succesfully!", HttpStatus.CREATED);
     }
 }

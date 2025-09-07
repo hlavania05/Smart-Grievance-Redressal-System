@@ -3,6 +3,7 @@ package com.smartgrievance.grievance_system.auth_service.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.smartgrievance.grievance_system.auth_service.dtos.RequestDtos.EmailOtpRequest;
 import com.smartgrievance.grievance_system.auth_service.dtos.RequestDtos.LoginRequestDTO;
 import com.smartgrievance.grievance_system.auth_service.dtos.RequestDtos.SignUpRequestDTO;
 import com.smartgrievance.grievance_system.auth_service.service.AuthService;
@@ -34,7 +35,7 @@ public class AuthController {
             return authService.registerUser(signUpRequest);
         }
         catch(Exception e){
-            return new ResponseEntity<>("Internale Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -49,6 +50,17 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/validate/otp")
+    public ResponseEntity<?> validateEmailOtp(@RequestBody EmailOtpRequest emailOtpRequest){
+        // System.out.println("email : " + emailOtpRequest.getEmail() + ", otp : " + emailOtpRequest.getOtp());
+        try{
+            return authService.ValidateEmailOTP(emailOtpRequest);
+        }
+        catch(Exception e){
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(@RequestParam("id") Long id) {
         try{
@@ -57,5 +69,4 @@ public class AuthController {
             return new ResponseEntity<>("Internal Server Error!!", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    
 }
