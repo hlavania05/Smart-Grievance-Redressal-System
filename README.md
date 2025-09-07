@@ -113,13 +113,13 @@ The system uses **JWT-based Authentication & Authorization** with role-based acc
 
 ```bash
 # Clone repo
-git clone https://github.com/your-username/smart-grievance-system.git
+git clone https://github.com/hlavania05/smart-grievance-system.git
 cd smart-grievance-system
 
 # Configure DB in application.properties
-spring.datasource.url=jdbc:mysql://localhost:3306/grievance_db
-spring.datasource.username=root
-spring.datasource.password=yourpassword
+spring.datasource.url={DB_URL}
+spring.datasource.username={DB_USERNAME}
+spring.datasource.password={DB_PASSWORD}
 
 # Run Spring Boot app
 mvn spring-boot:run
